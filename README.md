@@ -4,7 +4,7 @@ GUI application to help push out Prisma SD-WAN sites from a CSV database and Jin
 Preview Image of Make Program
 ![alt text](./Images/Make.png "screenshot")
 
-Preview Image of Build-v2 Program
+Preview Image of Build Program
 ![alt text](./Images/Build-v2.png "screenshot")
 
 #### Features
