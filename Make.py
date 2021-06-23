@@ -69,6 +69,14 @@ class WorkerPull(QRunnable):
 class lineEditDemo(QWidget):
         def __init__(self,parent=None):
                 super().__init__(parent)    
+                self.name = ""
+                self.city = ""
+                self.street = ""
+                self.country = ""
+                self.state = ""
+                self.post_code = ""
+                self.line_start = 0
+                self.line_org = 0
                 self.pull_site_name = ""
                 self.csv = {}
                 self.jinja_file = ""
@@ -147,14 +155,10 @@ class lineEditDemo(QWidget):
                 fmt.setFontWeight(QFont.Bold)
                 self.text_console.setCurrentCharFormat(fmt)
                 
-                
                 self.text_console.append("The purpose of this program is to help you build your Master Jinja file. This file can be used with the Prisma SD-WAN DevOps model to fully automate provisioning and deployment.\n\nFirst either pull your base file from a site you want to use or pick a local file. I will automaticaly create variables for your site name and address but for any other options just highlight the text with your mouse, click create variable and name it. When complete hit save and then you can add site details to the CSV file and then use it with the Jinja as part of the site deployment tool. \n")
                 
                 fmt = QTextCharFormat()
                 self.text_console.setCurrentCharFormat(fmt)
-                
-                if not os.path.exists('Backup'):
-                    os.makedirs('Backup')
                 
                 if sites == None:
                     self.text_console.append("Pull from sites failed but you can choose a local yaml base file \n")
@@ -182,7 +186,9 @@ class lineEditDemo(QWidget):
 
 ######################### Pull Base Yaml ###################################
                 
-        def pull(self):           
+        def pull(self):
+            if not os.path.exists('Backup'):
+                os.makedirs('Backup')            
             self.pull_site_name = self.site.currentText()
             workerdo = WorkerPull(self.pull_site_name)
             workerdo.signals.result.connect(self.print_output)
@@ -198,41 +204,7 @@ class lineEditDemo(QWidget):
                 variable, ok = QInputDialog.getText(self, 'Variable Name', 'Please provide variable name (no spaces)')
                 variable.replace(" ", "")
                 if variable in self.csv.keys(): 
-                    msg = QMessageBox()
-                    msg.setWindowTitle("Site Variable")
-                    msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-                    msg.setText("This variable already exsists. Do you want to reference it again?")
-                    returnValue = msg.exec_()
-                    if returnValue == QMessageBox.Yes:
-                        self.text_console.append("Added variable {{ " + variable + " }} for " + select + "\n")
-                        cursor.removeSelectedText()
-                        variable = "{{ " + variable + " }}"
-                        fmt = QTextCharFormat()
-                        fmt.setBackground(Qt.green)
-                        cursor.setCharFormat(fmt)
-                        cursor.insertText(variable)
-                    else:
-                        fmt = QTextCharFormat()
-                        fmt.setForeground(Qt.red)
-                        self.text_console.setCurrentCharFormat(fmt)
                         self.text_console.append("Sorry that variable already exsists\n")
-                        fmt = QTextCharFormat()
-                        self.text_console.setCurrentCharFormat(fmt)
-                elif "-" in variable:
-                    fmt = QTextCharFormat()
-                    fmt.setForeground(Qt.red)
-                    self.text_console.setCurrentCharFormat(fmt)
-                    self.text_console.append("Sorry please don't use a dash - in your variables. Another option is underscores _\n")
-                    fmt = QTextCharFormat()
-                    self.text_console.setCurrentCharFormat(fmt)
-                elif not variable:
-                    print(variable)
-                    fmt = QTextCharFormat()
-                    fmt.setForeground(Qt.red)
-                    self.text_console.setCurrentCharFormat(fmt)
-                    self.text_console.append("Sorry please enter some text for the variable\n")
-                    fmt = QTextCharFormat()
-                    self.text_console.setCurrentCharFormat(fmt)
                 else:
                     self.csv.setdefault(variable, []).append(select)
                     self.text_console.append("Added variable {{ " + variable + " }} for " + select + " and put it in CSV\n")
@@ -242,29 +214,6 @@ class lineEditDemo(QWidget):
                     fmt.setBackground(Qt.green)
                     cursor.setCharFormat(fmt)
                     cursor.insertText(variable)
-                    
-                    msg = QMessageBox()
-                    msg.setWindowTitle("Site Variable")
-                    msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-                    msg.setText("Do you want to find all instance of the text you selected and insert the variable?")
-                    returnValue = msg.exec_()
-                    if returnValue == QMessageBox.Yes:
-                        self.text_output.moveCursor(QTextCursor.Start)
-                        self.text_output.verticalScrollBar().setValue(0)      
-                        find_text = select
-                        check = self.text_output.find(find_text)
-                        while check == True:
-                            section = self.text_output.textCursor()
-                            text = section.selectedText()
-                            fmt.setBackground(Qt.green)
-                            section.setCharFormat(fmt)
-                            section.insertText(variable)
-                            check = self.text_output.find(find_text)
-                            section = self.text_output.textCursor()
-                            fmt.setBackground(Qt.white)
-                            section.setCharFormat(fmt)
-                        self.text_output.moveCursor(QTextCursor.Start)
-                        self.text_output.verticalScrollBar().setValue(0)
 
 ######################### Undo Jinja Variable ##############################
         
@@ -320,36 +269,25 @@ class lineEditDemo(QWidget):
 #################### Base Changes for Address and Site Name ########################
         
         def find_replace(self):
-            
-            description = ""
-            site_name = ""
-            city = ""
-            street = ""
-            country = ""
-            state = ""
-            post_code = ""
-            line_start = 0
-            line_org = 0
-            serial_number_1 = ""
-            serial_number_2 = ""
-            
             temp_file = open(self.jinja_file, "r")
             intial_file = temp_file .readlines()
             line_num = 0
             for line in intial_file:
                 line_num += 1
                 if "sites v4.5:" in line:
-                    line_start = line_num
-                    line_org = line_num
+                    self.line_start = line_num
+                    self.line_org = line_num
                             
-            get = intial_file[line_start]
+            get = intial_file[self.line_start]
             head_tail = get.split(": ")
-            name = head_tail[0].strip()
-            site_name = name.replace(":","")
-            self.csv.setdefault("site_name", []).append(site_name)        
+            self.name = head_tail[0].strip()
+            self.name = self.name[:-1]
+            self.csv.setdefault("site_name", []).append(self.name)
+            self.name = get.strip()
+            self.line_start += 2
             
             section=self.text_output.textCursor()
-            section.movePosition(QTextCursor.Down, QTextCursor.MoveAnchor, line_org)
+            section.movePosition(QTextCursor.Down, QTextCursor.MoveAnchor, self.line_org)
             section.movePosition(QTextCursor.StartOfBlock)
             section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
             text = section.selectedText()
@@ -361,212 +299,109 @@ class lineEditDemo(QWidget):
             fmt.setBackground(Qt.white)
             section.setCharFormat(fmt)
             section.insertText(":")
-            section.movePosition(QTextCursor.Start)
-            self.text_output.verticalScrollBar().setValue(0)            
             
-            self.text_output.find("latitude:")
-            section=self.text_output.textCursor()
-            section.movePosition(QTextCursor.StartOfBlock)
-            section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
-            text = section.selectedText()
-            section.insertText("      latitude: ")
-            fmt.setBackground(Qt.green)
-            section.setCharFormat(fmt)
-            section.insertText("{{" + " site_lat }}")
-            fmt.setBackground(Qt.white)
-            section.setCharFormat(fmt)
-            section.movePosition(QTextCursor.Start)
-            self.text_output.verticalScrollBar().setValue(0)
+
             
-            self.text_output.find("longitude:")
-            section=self.text_output.textCursor()
-            section.movePosition(QTextCursor.StartOfBlock)
-            section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
-            text = section.selectedText()
-            section.insertText("      longitude: ")
-            fmt.setBackground(Qt.green)
-            section.setCharFormat(fmt)
-            section.insertText("{{" + " site_long }}")
-            fmt.setBackground(Qt.white)
-            section.setCharFormat(fmt)
-            self.text_output.moveCursor(QTextCursor.Start)
-            self.text_output.verticalScrollBar().setValue(0)
-            
-            self.text_output.find("serial_number:")
-            section=self.text_output.textCursor()
-            section.movePosition(QTextCursor.StartOfBlock)
-            section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
-            text = section.selectedText()
-            head_tail = text.split(": ")
-            serial_number_1 = head_tail[1].strip()
-            section.insertText("        serial_number: ")
-            fmt.setBackground(Qt.green)
-            section.setCharFormat(fmt)
-            section.insertText("{{" + " ion_serial_number_1 }}")
-            fmt.setBackground(Qt.white)
-            section.setCharFormat(fmt)
-            check = self.text_output.find("serial_number:")
-            if check == True:
-                section=self.text_output.textCursor()
+            get = intial_file[self.line_start]
+            head_tail = get.split(": ")
+            check = len(head_tail)
+            section.movePosition(QTextCursor.Down, QTextCursor.MoveAnchor, 2)
+            if check == 2:
+                self.city = head_tail[1].strip()
+                self.csv.setdefault("city", []).append(self.city)
+                self.city = get.strip()
                 section.movePosition(QTextCursor.StartOfBlock)
                 section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
                 text = section.selectedText()
-                head_tail = text.split(": ")
-                serial_number_2 = head_tail[1].strip()
-                section.insertText("        serial_number: ")
-                fmt.setBackground(Qt.green)
-                section.setCharFormat(fmt)
-                section.insertText("{{" + " ion_serial_number_2 }}")
-                fmt.setBackground(Qt.white)
-                section.setCharFormat(fmt)
-            self.text_output.moveCursor(QTextCursor.Start)
-            self.text_output.verticalScrollBar().setValue(0)
-            
-            self.text_output.find("city:")
-            section=self.text_output.textCursor()
-            section.movePosition(QTextCursor.StartOfBlock)
-            section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
-            text = section.selectedText()
-            head_tail = text.split(": ")
-            check = len(head_tail)
-            if check == 2:
-                city = head_tail[1].strip()
                 section.insertText("      city: ")
                 fmt.setBackground(Qt.green)
                 section.setCharFormat(fmt)
                 section.insertText("{{" + " city }}")
                 fmt.setBackground(Qt.white)
                 section.setCharFormat(fmt)
-            self.text_output.moveCursor(QTextCursor.Start)
-            self.text_output.verticalScrollBar().setValue(0)
-            
-            self.text_output.find("country:")
-            section=self.text_output.textCursor()
-            section.movePosition(QTextCursor.StartOfBlock)
-            section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
-            text = section.selectedText()
-            head_tail = text.split(": ")
+                
+            self.line_start += 1
+            get = intial_file[self.line_start]
+            head_tail = get.split(": ")
             check = len(head_tail)
+            section.movePosition(QTextCursor.Down, QTextCursor.MoveAnchor, 1)
             if check == 2:
-                country = head_tail[1].strip()
+                self.country = head_tail[1].strip()
+                self.csv.setdefault("country", []).append(self.country)
+                self.country = get.strip()
+                section.movePosition(QTextCursor.StartOfBlock)
+                section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+                text = section.selectedText()
                 section.insertText("      country: ")
                 fmt.setBackground(Qt.green)
                 section.setCharFormat(fmt)
                 section.insertText("{{" + " country }}")
                 fmt.setBackground(Qt.white)
                 section.setCharFormat(fmt)
-            self.text_output.moveCursor(QTextCursor.Start)
-            self.text_output.verticalScrollBar().setValue(0)
+                
+
             
-            self.text_output.find("post_code:")
-            section=self.text_output.textCursor()
-            section.movePosition(QTextCursor.StartOfBlock)
-            section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
-            text = section.selectedText()
-            head_tail = text.split(": ")
+            self.line_start += 1
+            get = intial_file[self.line_start]
+            head_tail = get.split(": ")
             check = len(head_tail)
+            section.movePosition(QTextCursor.Down, QTextCursor.MoveAnchor, 1)
             if check == 2:
-                post_code = head_tail[1].strip()
+                self.post_code = head_tail[1].strip()
+                self.csv.setdefault("post_code", []).append(self.post_code)
+                self.post_code = get.strip()
+                section.movePosition(QTextCursor.StartOfBlock)
+                section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+                text = section.selectedText()
                 section.insertText("      post_code: ")
                 fmt.setBackground(Qt.green)
                 section.setCharFormat(fmt)
                 section.insertText("{{" + " post_code }}")
                 fmt.setBackground(Qt.white)
                 section.setCharFormat(fmt)
-            self.text_output.moveCursor(QTextCursor.Start)
-            self.text_output.verticalScrollBar().setValue(0)
-            
-            self.text_output.find("state:")
-            section=self.text_output.textCursor()
-            section.movePosition(QTextCursor.StartOfBlock)
-            section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
-            text = section.selectedText()
-            head_tail = text.split(": ")
+                
+                
+            self.line_start += 1
+            get = intial_file[self.line_start]
+            head_tail = get.split(": ")
             check = len(head_tail)
+            section.movePosition(QTextCursor.Down, QTextCursor.MoveAnchor, 1)
             if check == 2:
-                street = head_tail[1].strip()
+                self.state = head_tail[1].strip()
+                self.csv.setdefault("state", []).append(self.state)
+                self.state = get.strip()
+                self.line_start += 1
+                section.movePosition(QTextCursor.StartOfBlock)
+                section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+                text = section.selectedText()
                 section.insertText("      state: ")
                 fmt.setBackground(Qt.green)
                 section.setCharFormat(fmt)
                 section.insertText("{{" + " state }}")
                 fmt.setBackground(Qt.white)
                 section.setCharFormat(fmt)
-            self.text_output.moveCursor(QTextCursor.Start)
-            self.text_output.verticalScrollBar().setValue(0)
             
-            self.text_output.find("street:")
-            section=self.text_output.textCursor()
-            section.movePosition(QTextCursor.StartOfBlock)
-            section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
-            text = section.selectedText()
-            head_tail = text.split(": ")
+            
+           
+            self.line_start += 1
+            get = intial_file[self.line_start]
+            head_tail = get.split(": ")
             check = len(head_tail)
+            section.movePosition(QTextCursor.Down, QTextCursor.MoveAnchor, 1)
             if check == 2:
-                street = head_tail[1].strip()
+                self.street = head_tail[1].strip()
+                self.csv.setdefault("street", []).append(self.street)
+                self.street = get.strip()
+
+                section.movePosition(QTextCursor.StartOfBlock)
+                section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+                text = section.selectedText()
                 section.insertText("      street: ")
                 fmt.setBackground(Qt.green)
                 section.setCharFormat(fmt)
                 section.insertText("{{" + " street }}")
                 fmt.setBackground(Qt.white)
                 section.setCharFormat(fmt)
-            self.text_output.moveCursor(QTextCursor.Start)
-            self.text_output.verticalScrollBar().setValue(0)
-            
-            self.text_output.find("description:")
-            section=self.text_output.textCursor()
-            section.movePosition(QTextCursor.StartOfBlock)
-            section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
-            text = section.selectedText()
-            head_tail = text.split(": ")
-            check = len(head_tail)
-            if check == 2:
-                description = head_tail[1].strip()
-                section.insertText("      description: ")
-                fmt.setBackground(Qt.green)
-                section.setCharFormat(fmt)
-                section.insertText("{{" + " description }}")
-                fmt.setBackground(Qt.white)
-                section.setCharFormat(fmt)
-            self.text_output.moveCursor(QTextCursor.Start)
-            self.text_output.verticalScrollBar().setValue(0)
-            
-            
-            self.csv.setdefault("ion_serial_number_1", []).append(serial_number_1)
-            if serial_number_2 != "":
-                self.csv.setdefault("ion_serial_number_2", []).append(serial_number_2)
-            if description != "":
-                self.csv.setdefault("description", []).append(description)
-            if street != "":
-                self.csv.setdefault("street", []).append(street)
-            if city != "":
-                self.csv.setdefault("city", []).append(city)
-            if post_code != "":
-                self.csv.setdefault("post_code", []).append(post_code)
-            if state != "":
-                self.csv.setdefault("state", []).append(state)
-            if country != "":
-                self.csv.setdefault("country", []).append(country)
-            
-            self.text_output.moveCursor(QTextCursor.Start)
-            self.text_output.verticalScrollBar().setValue(0)      
-            find_text = site_name
-            check = self.text_output.find(find_text)
-            while check == True:
-                section = self.text_output.textCursor()
-                text = section.selectedText()
-                text = "{{ " + "site_name }}"
-                fmt.setBackground(Qt.green)
-                section.setCharFormat(fmt)
-                section.insertText(text)
-                check = self.text_output.find(find_text)
-                section = self.text_output.textCursor()
-            fmt.setBackground(Qt.white)
-            section.setCharFormat(fmt)
-            section.movePosition(QTextCursor.Start)
-            self.text_output.verticalScrollBar().setValue(0)
-
-        
-######################### Undo Jinja Variable ##############################
 
         
         def progress_fn(self, n):
