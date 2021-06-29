@@ -20,6 +20,13 @@ from csv import DictReader
 
 ######################### Thread Commands ###################################
 
+class EmittingStream(QObject):
+
+    textWritten = pyqtSignal(str)
+
+    def write(self, text):
+        self.textWritten.emit(str(text))
+
 class WorkerSignals(QObject):
     '''
     Defines the signals available from a running worker thread.
@@ -59,112 +66,125 @@ class WorkerPull(QRunnable):
         '''
         Your code goes in this function
         '''
-        result = "Starting pull please wait....\n"
-        self.signals.result.emit(result)
-        pull(self.name)
-        self.signals.finished.emit()
+        try:
+            result = "Starting pull please wait....\n"
+            self.signals.result.emit(result)
+            pull(self.name)
+            self.signals.finished.emit()
+        except:
+            result = "Sorry pulled failed for " + self.name + "\n"
+            self.signals.result.emit(result)
 
 ######################### Main PyQt Window ###################################
 
 class lineEditDemo(QWidget):
         def __init__(self,parent=None):
-                super().__init__(parent)    
-                self.name = ""
-                self.city = ""
-                self.street = ""
-                self.country = ""
-                self.state = ""
-                self.post_code = ""
-                self.line_start = 0
-                self.line_org = 0
-                self.pull_site_name = ""
-                self.csv = {}
-                self.jinja_file = ""
-                
-                sites = get()
-                self.site = QComboBox()
-                
-                btn1 = QPushButton("Make Variable")
-                btn1.clicked.connect(self.select_text)
-                btn2 = QPushButton("Undo Variable")
-                btn2.clicked.connect(self.deselect_text)
-                btn3 = QPushButton("Select File")
-                btn3.clicked.connect(self.getYML)
-                btn4 = QPushButton("Pull")
-                btn4.clicked.connect(self.pull)
-                btn5 = QPushButton("Save Jinja and CSV")
-                btn5.clicked.connect(self.save_text)
-                
-                layout_console = QFormLayout()
-                labelname = QLabel('or select local yaml base:')
-                yaml_qhbox = QHBoxLayout()
-                yaml_qhbox.addWidget(labelname)
-                yaml_qhbox.addWidget(btn3)
-                pull_qhbox = QHBoxLayout()
-                labelname = QLabel('Select site to pull yaml base:')
-                pull_qhbox.addWidget(labelname)
-                pull_qhbox.addWidget(self.site)
-                pull_qhbox.addWidget(btn4)
-                layout_console = QFormLayout()
-                layout_console.addRow(pull_qhbox)
-                layout_console.addRow(yaml_qhbox)
-                self.text_console = QTextEdit() 
-                self.text_console.setReadOnly(True)
-                self.text_console.setMinimumHeight(500)
-                self.text_console.setMinimumWidth(400)
-                labelname = QLabel('Message Output')
-                layout_console.addRow(labelname)
-                layout_console.addRow(self.text_console)
-                
-                
-                layout_display = QFormLayout()
-                self.text_output = QPlainTextEdit()
-                self.text_output.setMinimumHeight(600)
-                self.text_output.setMinimumWidth(450)
-                select_qhbox = QHBoxLayout()
-                select_qhbox.addWidget(btn1)
-                select_qhbox.addWidget(btn2)
-                layout_display.addRow(self.text_output)
-                layout_display.addRow(select_qhbox)
-                layout_display.addRow(btn5)
-                
-                self.input_left = QGroupBox("Base Selection")
-                self.input_left.setLayout(layout_console)
-                self.input_left.setStyleSheet('QGroupBox:title {'
-                                 'subcontrol-origin: margin;'
-                                 'padding-left: 10px;'
-                                 'font: bold;'
-                                 'padding-right: 10px; }')
-                
-                self.input_right = QGroupBox("Jinja Base Build")
-                self.input_right.setLayout(layout_display)
-                self.input_right.setStyleSheet('QGroupBox:title {'
-                                 'subcontrol-origin: margin;'
-                                 'padding-left: 10px;'
-                                 'font: bold;'
-                                 'padding-right: 10px; }')
-                                 
-                self.threadpool = QThreadPool()
-                mainLayout = QGridLayout()
-                mainLayout.addWidget(self.input_left, 0, 0)
-                mainLayout.addWidget(self.input_right, 0, 1)
-                self.setLayout(mainLayout)
-                self.setWindowTitle("Prisma SD-WAN Site Build")
-                
-                fmt = QTextCharFormat()
-                fmt.setFontWeight(QFont.Bold)
-                self.text_console.setCurrentCharFormat(fmt)
-                
-                self.text_console.append("The purpose of this program is to help you build your Master Jinja file. This file can be used with the Prisma SD-WAN DevOps model to fully automate provisioning and deployment.\n\nFirst either pull your base file from a site you want to use or pick a local file. I will automaticaly create variables for your site name and address but for any other options just highlight the text with your mouse, click create variable and name it. When complete hit save and then you can add site details to the CSV file and then use it with the Jinja as part of the site deployment tool. \n")
-                
-                fmt = QTextCharFormat()
-                self.text_console.setCurrentCharFormat(fmt)
-                
-                if sites == None:
-                    self.text_console.append("Pull from sites failed but you can choose a local yaml base file \n")
-                else:
-                    for site_name in sites:
-                        self.site.addItem(site_name)
+            super().__init__(parent)    
+            self.name = ""
+            self.city = ""
+            self.street = ""
+            self.country = ""
+            self.state = ""
+            self.post_code = ""
+            self.line_start = 0
+            self.line_org = 0
+            self.pull_site_name = ""
+            self.csv = {}
+            self.jinja_file = ""
+            
+            sites = get()
+            self.site = QComboBox()
+            
+            btn1 = QPushButton("Make Variable")
+            btn1.clicked.connect(self.select_text)
+            btn2 = QPushButton("Undo Variable")
+            btn2.clicked.connect(self.deselect_text)
+            btn3 = QPushButton("Select File")
+            btn3.clicked.connect(self.getYML)
+            btn4 = QPushButton("Pull")
+            btn4.clicked.connect(self.pull)
+            btn5 = QPushButton("Save Jinja and CSV")
+            btn5.clicked.connect(self.save_text)
+            
+            layout_console = QFormLayout()
+            labelname = QLabel('or select local yaml base:')
+            yaml_qhbox = QHBoxLayout()
+            yaml_qhbox.addWidget(labelname)
+            yaml_qhbox.addWidget(btn3)
+            pull_qhbox = QHBoxLayout()
+            labelname = QLabel('Select site to pull yaml base:')
+            pull_qhbox.addWidget(labelname)
+            pull_qhbox.addWidget(self.site)
+            pull_qhbox.addWidget(btn4)
+            layout_console = QFormLayout()
+            layout_console.addRow(pull_qhbox)
+            layout_console.addRow(yaml_qhbox)
+            self.text_console = QTextEdit() 
+            self.text_console.setReadOnly(True)
+            self.text_console.setMinimumHeight(500)
+            self.text_console.setMinimumWidth(400)
+            labelname = QLabel('Message Output')
+            layout_console.addRow(labelname)
+            layout_console.addRow(self.text_console)
+            
+            
+            layout_display = QFormLayout()
+            self.text_output = QPlainTextEdit()
+            self.text_output.setMinimumHeight(600)
+            self.text_output.setMinimumWidth(450)
+            select_qhbox = QHBoxLayout()
+            select_qhbox.addWidget(btn1)
+            select_qhbox.addWidget(btn2)
+            layout_display.addRow(self.text_output)
+            layout_display.addRow(select_qhbox)
+            layout_display.addRow(btn5)
+            
+            self.input_left = QGroupBox("Base Selection")
+            self.input_left.setLayout(layout_console)
+            self.input_left.setStyleSheet('QGroupBox:title {'
+                             'subcontrol-origin: margin;'
+                             'padding-left: 10px;'
+                             'font: bold;'
+                             'padding-right: 10px; }')
+            
+            self.input_right = QGroupBox("Jinja Base Build")
+            self.input_right.setLayout(layout_display)
+            self.input_right.setStyleSheet('QGroupBox:title {'
+                             'subcontrol-origin: margin;'
+                             'padding-left: 10px;'
+                             'font: bold;'
+                             'padding-right: 10px; }')
+                             
+            self.threadpool = QThreadPool()
+            mainLayout = QGridLayout()
+            mainLayout.addWidget(self.input_left, 0, 0)
+            mainLayout.addWidget(self.input_right, 0, 1)
+            self.setLayout(mainLayout)
+            self.setWindowTitle("Prisma SD-WAN Site Build")
+            
+            fmt = QTextCharFormat()
+            fmt.setFontWeight(QFont.Bold)
+            self.text_console.setCurrentCharFormat(fmt)
+            
+            self.text_console.append("The purpose of this program is to help you build your Master Jinja file. This file can be used with the Prisma SD-WAN DevOps model to fully automate provisioning and deployment.\n\nFirst either pull your base file from a site you want to use or pick a local file. I will automaticaly create variables for your site name and address but for any other options just highlight the text with your mouse, click create variable and name it. When complete hit save and then you can add site details to the CSV file and then use it with the Jinja as part of the site deployment tool. \n")
+            
+            fmt = QTextCharFormat()
+            self.text_console.setCurrentCharFormat(fmt)
+            
+            #sys.stdout = EmittingStream(textWritten=self.output_terminal_written)
+            #sys.stderr = EmittingStream(textWritten=self.output_terminal_written)
+            
+            if sites == None:
+                self.text_console.append("Pull from sites failed but you can choose a local yaml base file \n")
+            else:
+                for site_name in sites:
+                    self.site.addItem(site_name)
+
+######################### Output sys ###################################
+
+        
+        def output_terminal_written(self, text):
+            self.text_console.append(text)
 
 ######################### Open Base Yaml ###################################
       
@@ -174,7 +194,7 @@ class lineEditDemo(QWidget):
             jinja_file = head_tail[1]
             self.jinja_file = filename[0]
             if jinja_file == "":
-                self.text_console.append("Cancelled file selection")
+                self.text_console.append("")
             else:
                 self.text_console.append("YAML base selected: " + filename[0] + "\n")
                 file_temp = open(filename[0], "r")
@@ -370,7 +390,6 @@ class lineEditDemo(QWidget):
                 self.state = head_tail[1].strip()
                 self.csv.setdefault("state", []).append(self.state)
                 self.state = get.strip()
-                self.line_start += 1
                 section.movePosition(QTextCursor.StartOfBlock)
                 section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
                 text = section.selectedText()
@@ -380,8 +399,6 @@ class lineEditDemo(QWidget):
                 section.insertText("{{" + " state }}")
                 fmt.setBackground(Qt.white)
                 section.setCharFormat(fmt)
-            
-            
            
             self.line_start += 1
             get = intial_file[self.line_start]
@@ -392,7 +409,6 @@ class lineEditDemo(QWidget):
                 self.street = head_tail[1].strip()
                 self.csv.setdefault("street", []).append(self.street)
                 self.street = get.strip()
-
                 section.movePosition(QTextCursor.StartOfBlock)
                 section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
                 text = section.selectedText()

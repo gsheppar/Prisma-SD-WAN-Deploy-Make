@@ -73,17 +73,25 @@ class WorkerPull(QRunnable):
         '''
         Your code goes in this function
         '''
-        print("Starting backup please wait....")
-        pull(self.name)
-        result = "Site: " + self.name + " has now been backed up"
-        self.signals.result.emit(result)
-        if self.destroy_site == "destroy":
-            result = "Starting delete of " + self.name + " . Please wait..."
+        try:
+            print("Starting backup please wait....")
+            pull(self.name)
+            result = "Site: " + self.name + " has now been backed up"
             self.signals.result.emit(result)
-            dosite(self.filename, self.destroy_site)
-            result = "Site: " + self.name + " is now gone\n"
+            try:
+                if self.destroy_site == "destroy":
+                    result = "Starting delete of " + self.name + " . Please wait..."
+                    self.signals.result.emit(result)
+                    dosite(self.filename, self.destroy_site)
+                    result = "Site: " + self.name + " is now gone\n"
+                    self.signals.result.emit(result)
+                self.signals.finished.emit()
+            except:
+                result = "Site " + self.name + " destroy failed"
+                self.signals.result.emit(result)
+        except:
+            result = "Backup failed for " + self.name
             self.signals.result.emit(result)
-        self.signals.finished.emit()
 
 class WorkerDo(QRunnable):
     '''
@@ -101,13 +109,18 @@ class WorkerDo(QRunnable):
         '''
         Your code goes in this function
         '''
-        print("Start push please wait....")
-        result = "Starting push of " + self.filename + " . Please wait..."
-        self.signals.result.emit(result)
-        dosite(self.filename, self.destroy_site)
-        result = "File " + self.filename + " has now been pushed\n"
-        self.signals.result.emit(result)
-        self.signals.finished.emit()
+        try:
+            print("Start push please wait....")
+            result = "Starting push of " + self.filename + " . Please wait..."
+            self.signals.result.emit(result)
+            dosite(self.filename, self.destroy_site)
+            result = "File " + self.filename + " has now been pushed\n"
+            self.signals.result.emit(result)
+            self.signals.finished.emit()
+        except:
+            result = "Deployment failed for " + self.filename
+            self.signals.result.emit(result)
+            
 
 class WorkerVerify(QRunnable):
     '''
@@ -124,12 +137,16 @@ class WorkerVerify(QRunnable):
         '''
         Your code goes in this function
         '''
-        result = "Start verification please wait...."
-        self.signals.result.emit(result)
-        verify(self.name)
-        result = "Verification is complete\n"
-        self.signals.result.emit(result)
-        self.signals.finished.emit()
+        try:
+            result = "Start verification please wait...."
+            self.signals.result.emit(result)
+            verify(self.name)
+            result = "Verification is complete\n"
+            self.signals.result.emit(result)
+            self.signals.finished.emit()
+        except:
+            result = "Verification failed"
+            self.signals.result.emit(result)
 
 ######################### Main PyQt Window ###################################
 
@@ -297,7 +314,6 @@ class lineEditDemo(QWidget):
                 sys.stderr = EmittingStream(textWritten=self.output_terminal_written)
                 
                 sites = get()
-
                 if sites != None:
                     for site_name in sites:
                         self.site.addItem(site_name)
@@ -306,55 +322,54 @@ class lineEditDemo(QWidget):
                
         def output_terminal_written(self, text):
             text = os.linesep.join([s for s in text.splitlines() if s])
-            
             self.log.write(text + "\n")
-            
-            if text.find("STATUS: DOWN") != -1:
-                self.text_output.setTextColor(QColor( "red" ))
-                self.text_output.append(text)
-            elif text.find("STATUS: GOOD") != -1:
-                self.text_output.setTextColor(QColor( "green" ))
-                self.text_output.append(text)
-            elif text.find("STATUS: OFFLINE") != -1:
-                self.text_output.setTextColor(QColor( "red" ))
-                self.text_output.append(text)
-            elif text.find("ION Status: CONNECTED") != -1:
-                self.text_output.setTextColor(QColor( "green" ))
-                self.text_output.append(text)
-            elif text.find("ION Status: OFFLINE (!!!)") != -1:
-                self.text_output.setTextColor(QColor( "red" ))
-                self.text_output.append(text)
-            elif text.find("No Alarm summaries") != -1:
-                self.text_output.setTextColor(QColor( "green" ))
-                self.text_output.append(text)
-            elif text.find("No Alarms found") != -1:
-                self.text_output.setTextColor(QColor( "green" ))
-                self.text_output.append(text)
-            elif text.find("No Alerts found") != -1:
-                self.text_output.setTextColor(QColor( "green" ))
-                self.text_output.append(text)
-            elif text.find("STATUS: Operational") != -1:
-                self.text_output.setTextColor(QColor( "green" ))
-                self.text_output.append(text)
-            elif text.find("ALARM: ") != -1:
-                self.text_output.setTextColor(QColor( "red" ))
-                self.text_output.append(text)
-            elif text.find("ALERT CODE: ") != -1:
-                self.text_output.setTextColor(QColor( "red" ))
-                self.text_output.append(text)
-            elif text.find("No unresolved google cloud issues detected") != -1:
-                self.text_output.setTextColor(QColor( "green" ))
-                self.text_output.append(text)
-            else:
-                self.text_output.setTextColor(QColor( "black" ))
-                self.text_output.append(text)
-                
+            if "mapquest" not in text:
+                if text.find("STATUS: DOWN") != -1:
+                    self.text_output.setTextColor(QColor( "red" ))
+                    self.text_output.append(text)
+                elif text.find("STATUS: GOOD") != -1:
+                    self.text_output.setTextColor(QColor( "green" ))
+                    self.text_output.append(text)
+                elif text.find("STATUS: OFFLINE") != -1:
+                    self.text_output.setTextColor(QColor( "red" ))
+                    self.text_output.append(text)
+                elif text.find("ION Status: CONNECTED") != -1:
+                    self.text_output.setTextColor(QColor( "green" ))
+                    self.text_output.append(text)
+                elif text.find("ION Status: OFFLINE (!!!)") != -1:
+                    self.text_output.setTextColor(QColor( "red" ))
+                    self.text_output.append(text)
+                elif text.find("No Alarm summaries") != -1:
+                    self.text_output.setTextColor(QColor( "green" ))
+                    self.text_output.append(text)
+                elif text.find("No Alarms found") != -1:
+                    self.text_output.setTextColor(QColor( "green" ))
+                    self.text_output.append(text)
+                elif text.find("No Alerts found") != -1:
+                    self.text_output.setTextColor(QColor( "green" ))
+                    self.text_output.append(text)
+                elif text.find("STATUS: Operational") != -1:
+                    self.text_output.setTextColor(QColor( "green" ))
+                    self.text_output.append(text)
+                elif text.find("ALARM: ") != -1:
+                    self.text_output.setTextColor(QColor( "red" ))
+                    self.text_output.append(text)
+                elif text.find("ALERT CODE: ") != -1:
+                    self.text_output.setTextColor(QColor( "red" ))
+                    self.text_output.append(text)
+                elif text.find("No unresolved google cloud issues detected") != -1:
+                    self.text_output.setTextColor(QColor( "green" ))
+                    self.text_output.append(text)
+                else:
+                    self.text_output.setTextColor(QColor( "black" ))
+                    self.text_output.append(text)    
             
             
 
 ######################### Build CSV to YAML File ###########################
         
-        def buildSite(self, site_csv_dict):              
+        def buildSite(self, site_csv_dict):
+            try:              
                 parameter_dict = dict()
                 for key,value in site_csv_dict.items():
                     parameter_dict[key] = value[0]
@@ -396,9 +411,40 @@ class lineEditDemo(QWidget):
                     parameter_dict["FW_next_hop"] = str( Branch_Base_Prefix + 2)
                     mpls_ip_mask = ipcalc.IP(parameter_dict['mpls_ip_mask'])
                     parameter_dict["PE_mpls_ip"] = str( mpls_ip_mask - 1)
-                    
+                
+                if "static_route" in parameter_dict:
+                        static = parameter_dict["static_route"]
+                        static_list = static.split(", ")
+                        route_list = []
+                        first = True
+                        for route in static_list:
+                            route_split = route.split("@")
+                            name = route_split[0]
+                            prefix = route_split[1]
+                            dst = static = parameter_dict["static_gw"]
+                            if first:
+                                first = False
+                            else:
+                                name = "            " + name
+                            route_list.append("""{}:
+              description:
+              destination_prefix: {}
+              network_context_id:
+              nexthop_reachability_probe: false
+              nexthops:
+              - admin_distance: 1
+                nexthop_interface_id:
+                nexthop_ip: {}
+                self: false
+              scope: global
+              tags:""".format(name, prefix, dst))
+                        route = "\n".join(route_list)
+                        parameter_dict["static_route_data"] = route                    
                 self.createSITE(parameter_dict)
                 print("\nConfiguration is now complete. When ready you can hit the Deploy Site to send site " + parameter_dict['site_name'] + " to the controller \n")
+                self.thread_complete()
+            except:
+                print("Build failed. Please check your CSV headers")
                 self.thread_complete()    
 
 ######################### Open File ###################################
@@ -432,9 +478,13 @@ class lineEditDemo(QWidget):
 
 ######################### View File ###################################
         
-        def openSite(self):              
+        def openSite(self):
+            try:
                 filename = os.path.join("./Configs/", self.sitefile.currentText())
-                subprocess.run(['open', filename], check=True)       
+                subprocess.run(['open', filename], check=True)
+            except:
+                print("Failed top open file " + self.sitefile.currentText())
+                      
 
 ######################### Build Dic ###################################
         

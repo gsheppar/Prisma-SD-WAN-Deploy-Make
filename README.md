@@ -19,7 +19,7 @@ MIT
 #### Requirements
 * Active CloudGenix Account - Please generate your API token and add it to cloudgenix_settings.py
 * Python >=3.6
-* Uses CloudGenix SDK v5.5.1b2
+* Uses CloudGenix SDK v5.5.3b1
 
 #### Installation:
  Scripts directory. 

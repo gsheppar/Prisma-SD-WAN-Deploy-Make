@@ -23,100 +23,100 @@ from csv import DictReader
 
 class lineEditDemo(QWidget):
         def __init__(self,parent=None):
-                super().__init__(parent)    
-                self.description = ""
-                self.name = ""
-                self.city = ""
-                self.street = ""
-                self.country = ""
-                self.state = ""
-                self.post_code = ""
-                self.line_start = 0
-                self.line_org = 0
-                self.pull_site_name = ""
-                self.csv = {}
-                self.csv_file = ""
-                self.jinja_file = ""
-                
-                btn1 = QPushButton("Make Variable")
-                btn1.clicked.connect(self.select_text)
-                btn2 = QPushButton("Undo Variable")
-                btn2.clicked.connect(self.deselect_text)
-                btn3 = QPushButton("Select File")
-                btn3.clicked.connect(self.getJINJA)
-                btn4 = QPushButton("Select FIle")
-                btn4.clicked.connect(self.getCSV)
-                btn5 = QPushButton("Save Jinja and CSV")
-                btn5.clicked.connect(self.save_text)
-                
-                layout_console = QFormLayout()
-                labelname = QLabel('Select CSV file:')
-                pull_qhbox = QHBoxLayout()
-                pull_qhbox.addWidget(labelname)
-                pull_qhbox.addWidget(btn4)
-                
-                labelname = QLabel('Select Jinja file:')
-                yaml_qhbox = QHBoxLayout()
-                yaml_qhbox.addWidget(labelname)
-                yaml_qhbox.addWidget(btn3)
-                layout_console = QFormLayout()
-                layout_console.addRow(pull_qhbox)
-                layout_console.addRow(yaml_qhbox)
-                self.text_console = QTextEdit() 
-                self.text_console.setReadOnly(True)
-                self.text_console.setMinimumHeight(500)
-                self.text_console.setMinimumWidth(400)
-                labelname = QLabel('Message Output')
-                layout_console.addRow(labelname)
-                layout_console.addRow(self.text_console)
-                
-                
-                layout_display = QFormLayout()
-                self.text_output = QPlainTextEdit()
-                self.text_output.setMinimumHeight(600)
-                self.text_output.setMinimumWidth(450)
-                select_qhbox = QHBoxLayout()
-                select_qhbox.addWidget(btn1)
-                select_qhbox.addWidget(btn2)
-                layout_display.addRow(self.text_output)
-                layout_display.addRow(select_qhbox)
-                layout_display.addRow(btn5)
-                
-                self.input_left = QGroupBox("Base Selection")
-                self.input_left.setLayout(layout_console)
-                self.input_left.setStyleSheet('QGroupBox:title {'
-                                 'subcontrol-origin: margin;'
-                                 'padding-left: 10px;'
-                                 'font: bold;'
-                                 'padding-right: 10px; }')
-                
-                self.input_right = QGroupBox("Jinja Base Build")
-                self.input_right.setLayout(layout_display)
-                self.input_right.setStyleSheet('QGroupBox:title {'
-                                 'subcontrol-origin: margin;'
-                                 'padding-left: 10px;'
-                                 'font: bold;'
-                                 'padding-right: 10px; }')
-                                 
-                self.threadpool = QThreadPool()
-                mainLayout = QGridLayout()
-                mainLayout.addWidget(self.input_left, 0, 0)
-                mainLayout.addWidget(self.input_right, 0, 1)
-                self.setLayout(mainLayout)
-                self.setWindowTitle("Prisma SD-WAN Site Build Update")
-                
-                fmt = QTextCharFormat()
-                fmt.setFontWeight(QFont.Bold)
-                self.text_console.setCurrentCharFormat(fmt)
-                
-                
-                self.text_console.append("The purpose of this program is to help update your Master Jinja file. This file can be used with the Prisma SD-WAN DevOps model to fully automate provisioning and deployment.\n\nFirst select your CSV file and then your Master Jinja file. Then you can add or remove any variables. When complete hit save and then you can add site details to the CSV file and use it with the Jinja as part of the site deployment tool. \n")
-                
-                fmt = QTextCharFormat()
-                self.text_console.setCurrentCharFormat(fmt)
-                
-                if not os.path.exists('Backup'):
-                    os.makedirs('Backup')
+            super().__init__(parent)    
+            self.description = ""
+            self.name = ""
+            self.city = ""
+            self.street = ""
+            self.country = ""
+            self.state = ""
+            self.post_code = ""
+            self.line_start = 0
+            self.line_org = 0
+            self.pull_site_name = ""
+            self.csv = {}
+            self.csv_file = ""
+            self.jinja_file = ""
+            
+            btn1 = QPushButton("Make Variable")
+            btn1.clicked.connect(self.select_text)
+            btn2 = QPushButton("Undo Variable")
+            btn2.clicked.connect(self.deselect_text)
+            btn3 = QPushButton("Select File")
+            btn3.clicked.connect(self.getJINJA)
+            btn4 = QPushButton("Select FIle")
+            btn4.clicked.connect(self.getCSV)
+            btn5 = QPushButton("Save Jinja and CSV")
+            btn5.clicked.connect(self.save_text)
+            
+            layout_console = QFormLayout()
+            labelname = QLabel('Select CSV file:')
+            pull_qhbox = QHBoxLayout()
+            pull_qhbox.addWidget(labelname)
+            pull_qhbox.addWidget(btn4)
+            
+            labelname = QLabel('Select Jinja file:')
+            yaml_qhbox = QHBoxLayout()
+            yaml_qhbox.addWidget(labelname)
+            yaml_qhbox.addWidget(btn3)
+            layout_console = QFormLayout()
+            layout_console.addRow(pull_qhbox)
+            layout_console.addRow(yaml_qhbox)
+            self.text_console = QTextEdit() 
+            self.text_console.setReadOnly(True)
+            self.text_console.setMinimumHeight(500)
+            self.text_console.setMinimumWidth(400)
+            labelname = QLabel('Message Output')
+            layout_console.addRow(labelname)
+            layout_console.addRow(self.text_console)
+            
+            
+            layout_display = QFormLayout()
+            self.text_output = QPlainTextEdit()
+            self.text_output.setMinimumHeight(600)
+            self.text_output.setMinimumWidth(450)
+            select_qhbox = QHBoxLayout()
+            select_qhbox.addWidget(btn1)
+            select_qhbox.addWidget(btn2)
+            layout_display.addRow(self.text_output)
+            layout_display.addRow(select_qhbox)
+            layout_display.addRow(btn5)
+            
+            self.input_left = QGroupBox("Base Selection")
+            self.input_left.setLayout(layout_console)
+            self.input_left.setStyleSheet('QGroupBox:title {'
+                             'subcontrol-origin: margin;'
+                             'padding-left: 10px;'
+                             'font: bold;'
+                             'padding-right: 10px; }')
+            
+            self.input_right = QGroupBox("Jinja Base Build")
+            self.input_right.setLayout(layout_display)
+            self.input_right.setStyleSheet('QGroupBox:title {'
+                             'subcontrol-origin: margin;'
+                             'padding-left: 10px;'
+                             'font: bold;'
+                             'padding-right: 10px; }')
+                             
+            self.threadpool = QThreadPool()
+            mainLayout = QGridLayout()
+            mainLayout.addWidget(self.input_left, 0, 0)
+            mainLayout.addWidget(self.input_right, 0, 1)
+            self.setLayout(mainLayout)
+            self.setWindowTitle("Prisma SD-WAN Site Build Update")
+            
+            fmt = QTextCharFormat()
+            fmt.setFontWeight(QFont.Bold)
+            self.text_console.setCurrentCharFormat(fmt)
+            
+            
+            self.text_console.append("The purpose of this program is to help update your Master Jinja file. This file can be used with the Prisma SD-WAN DevOps model to fully automate provisioning and deployment.\n\nFirst select your CSV file and then your Master Jinja file. Then you can add or remove any variables. When complete hit save and then you can add site details to the CSV file and use it with the Jinja as part of the site deployment tool. \n")
+            
+            fmt = QTextCharFormat()
+            self.text_console.setCurrentCharFormat(fmt)
+            
+            if not os.path.exists('Backup'):
+                os.makedirs('Backup')
 
 ######################### Open Base Yaml ###################################
       
@@ -289,8 +289,7 @@ class lineEditDemo(QWidget):
                     
 #################### Base Changes for Address and Site Name ########################
         
-        def find_replace(self):
-                        
+        def find_replace(self):          
             fmt = QTextCharFormat()      
             for key in self.csv:
                 self.text_output.moveCursor(QTextCursor.Start)
