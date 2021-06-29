@@ -2,7 +2,7 @@
 """
 Configuration EXPORT worker/script
 
-**Version:** 1.4.0b2
+**Version:** 1.5.0b1
 
 **Author:** CloudGenix
 
@@ -628,7 +628,7 @@ def delete_if_empty(variable_dict, key):
     """
     if key in variable_dict:
         val = variable_dict[key]
-        if not val and not isinstance(val, bool) and val is not 0:
+        if not val and not isinstance(val, bool) and val != 0:
             variable_dict.pop(key)
     return
 
@@ -1667,6 +1667,7 @@ def pull_config_sites(sites, output_filename, output_multi=None, passed_sdk=None
 
                 # Write out YAML file.
                 config_yml = open(final_dir + final_site_name + ".yml", "w")
+                print(config_yml)
                 config_yml.write("---\ntype: cloudgenix template\nversion: 1.0\n")
                 # write header by default, but skip if asked.
                 if not no_header:
@@ -1705,7 +1706,6 @@ def pull_config_sites(sites, output_filename, output_multi=None, passed_sdk=None
                     final_site_name = final_site_name.replace(' ', '_')
                 else:
                     final_site_name = cur_site_name
-                print(final_dir)
 
                 # Write out YAML file.
                 config_yml = open(final_dir + final_site_name + ".yml", "w")
