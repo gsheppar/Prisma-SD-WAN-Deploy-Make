@@ -644,30 +644,6 @@ def verify(name):
                 print(service['Name'] + " STATUS: " + "ISSUE DETECTED")
     #vprint(END_SECTION)
 
-    ### Check Google Cloud Serivces status:
-    google_core_services_url = 'https://www.google.com/appsstatus/json/en'
-    
-    print("\n##################################################################\n")
-    print("Google Cloud STATUS from: " + google_core_services_url)
-    
-    google_headers =  {'Content-type': 'application/json'}
-    google_health_request = requests.get(url = google_core_services_url,  headers=google_headers)
-    google_data = json.loads(google_health_request.text.replace("dashboard.jsonp(","").replace("});","}"))
-
-    google_service_list = {}
-    for service in google_data['services']:
-        google_service_list[service['id']] = service['name']
-
-    google_issue_count = 0
-    for messages in google_data['messages']:
-        if (not(messages['resolved'])):
-            google_issue_count += 1
-            print(google_service_list[messages['service']] + " STATUS: " + "ISSUE DETECTED")
-    if (google_issue_count == 0):
-        print("No unresolved google cloud issues detected")
-    print("\n##################################################################\n")
-    #vprint(END_SECTION)
-
 
 def logout():
     print("Logging out")
