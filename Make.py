@@ -210,10 +210,13 @@ class lineEditDemo(QWidget):
             if not os.path.exists('Backup'):
                 os.makedirs('Backup')            
             self.pull_site_name = self.site.currentText()
-            workerdo = WorkerPull(self.pull_site_name)
-            workerdo.signals.result.connect(self.print_output)
-            workerdo.signals.finished.connect(self.thread_complete)
-            self.threadpool.start(workerdo)
+            if self.pull_site_name == "":
+                self.text_console.append("No site to pull\n")
+            else:
+                workerdo = WorkerPull(self.pull_site_name)
+                workerdo.signals.result.connect(self.print_output)
+                workerdo.signals.finished.connect(self.thread_complete)
+                self.threadpool.start(workerdo)
                 
 ######################### Make Jinja Variable ##############################
         
@@ -294,7 +297,7 @@ class lineEditDemo(QWidget):
             line_num = 0
             for line in intial_file:
                 line_num += 1
-                if "sites v4.5:" in line:
+                if "sites v4.6:" in line:
                     self.line_start = line_num
                     self.line_org = line_num
                             
@@ -302,6 +305,7 @@ class lineEditDemo(QWidget):
             head_tail = get.split(": ")
             self.name = head_tail[0].strip()
             self.name = self.name[:-1]
+            print(self.name)
             self.csv.setdefault("site_name", []).append(self.name)
             self.name = get.strip()
             self.line_start += 2
@@ -433,6 +437,7 @@ class lineEditDemo(QWidget):
             filename = os.getcwd() + "/Backup/" + self.pull_site_name + ".yaml"
             self.jinja_file = filename
             self.text_console.append("YAML base pulled from " + self.pull_site_name + "\n")
+            self.text_console.append("# Note: For ION 9000 interface configuration, if the source_interface or parent_interface is a bypasspair port, add the attribute 'parent_type': bypasspair_<name> where name is the interface name. \n# If this field is not specified, the cloudgenix_config utility will assume the parent interface is of type 'port'.\n")
             file_temp = open(filename, "r")
             text = file_temp.read()
             self.text_output.insertPlainText(text)

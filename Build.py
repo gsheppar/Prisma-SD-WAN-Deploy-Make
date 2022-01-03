@@ -11,7 +11,7 @@ import requests
 import csv
 from cloudgenix_config.pull import pull
 from cloudgenix_config.do import dosite
-from cloudgenix_config.GetSite import get
+from cloudgenix_config.GetSite import get, tenant
 from cloudgenix_config.cg_site_health_check_prisma import verify
 import time
 import subprocess
@@ -315,6 +315,7 @@ class lineEditDemo(QWidget):
                 
                 sites = get()
                 if sites != None:
+                    tenant()
                     for site_name in sites:
                         self.site.addItem(site_name)
 

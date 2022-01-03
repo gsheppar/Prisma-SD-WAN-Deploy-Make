@@ -1,8 +1,6 @@
 # Prisma SD-WAN Push and Deploy (Preview)
 GUI application to help push out Prisma SD-WAN sites from a CSV database and Jinja base file. Also, there is an application to help create the Jinja base file and CSV database if you want to customize your own.
 
-THIS TOOL now also has a SAAS offering at https://sdwandevops.com
-
 Preview Image of Make Program
 ![alt text](./Images/Make.png "screenshot")
 
@@ -20,8 +18,9 @@ MIT
 
 #### Requirements
 * Active CloudGenix Account - Please generate your API token and add it to cloudgenix_settings.py
-* Python >=3.6
-* Uses CloudGenix SDK v5.5.3b1
+* Python >=3.7
+* Uses CloudGenix SDK v5.6.1b2
+* Uses CloudGenix Config v1.6.0b1
 
 #### Installation:
  Scripts directory. 
@@ -55,6 +54,7 @@ MIT
 | Version | Build | Changes |
 | ------- | ----- | ------- |
 | **1.0.0** | **b1** | Initial Release. |
+| **2.0.0** | **b1** | Updated to support 5.6 SDK  |
 
 
 #### For more info
