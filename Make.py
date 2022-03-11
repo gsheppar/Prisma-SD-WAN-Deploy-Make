@@ -300,6 +300,10 @@ class lineEditDemo(QWidget):
                 if "sites v4.6:" in line:
                     self.line_start = line_num
                     self.line_org = line_num
+                elif "latitude:" in line:
+                    self.line_latitude = line_num
+                elif "longitude:" in line:
+                    self.line_longitude = line_num
                             
             get = intial_file[self.line_start]
             head_tail = get.split(": ")
@@ -420,6 +424,44 @@ class lineEditDemo(QWidget):
                 fmt.setBackground(Qt.green)
                 section.setCharFormat(fmt)
                 section.insertText("{{" + " street }}")
+                fmt.setBackground(Qt.white)
+                section.setCharFormat(fmt)
+            
+            get = intial_file[self.line_latitude]
+            head_tail = get.split(": ")
+            check = len(head_tail)
+            move_line = self.line_latitude - self.line_start
+            move_line = move_line - 1
+            section.movePosition(QTextCursor.Down, QTextCursor.MoveAnchor, move_line)
+            if check == 2:
+                self.lat = head_tail[1].strip()
+                self.csv.setdefault("site_lat", []).append(self.lat)
+                self.lat = get.strip()
+                section.movePosition(QTextCursor.StartOfBlock)
+                section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+                text = section.selectedText()
+                section.insertText("      latitude: ")
+                fmt.setBackground(Qt.green)
+                section.setCharFormat(fmt)
+                section.insertText("{{" + "site_lat }}")
+                fmt.setBackground(Qt.white)
+                section.setCharFormat(fmt)
+            
+            get = intial_file[self.line_longitude]
+            head_tail = get.split(": ")
+            check = len(head_tail)
+            section.movePosition(QTextCursor.Down, QTextCursor.MoveAnchor, 1)
+            if check == 2:
+                self.long = head_tail[1].strip()
+                self.csv.setdefault("site_long", []).append(self.long)
+                self.long = get.strip()
+                section.movePosition(QTextCursor.StartOfBlock)
+                section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+                text = section.selectedText()
+                section.insertText("      longitude: ")
+                fmt.setBackground(Qt.green)
+                section.setCharFormat(fmt)
+                section.insertText("{{" + "site_long }}")
                 fmt.setBackground(Qt.white)
                 section.setCharFormat(fmt)
 

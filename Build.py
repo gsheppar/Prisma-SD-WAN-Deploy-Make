@@ -390,57 +390,7 @@ class lineEditDemo(QWidget):
                     address_concat = address_concat.strip()
                     latlon_request = self.getLATLONG(address_concat)
                     parameter_dict["site_lat"] = latlon_request[0]
-                    parameter_dict["site_long"] = latlon_request[1]
-                if "Branch_Base_Prefix" in parameter_dict:
-                    Branch_Base_Prefix = ipcalc.IP(parameter_dict['Branch_Base_Prefix'])
-                    parameter_dict["vlan1_range1_start"] = str( Branch_Base_Prefix + 3)
-                    parameter_dict["vlan1_gateway"] = str( Branch_Base_Prefix + 1)
-                    parameter_dict["vlan1_broadcast"] = str( Branch_Base_Prefix + 255)
-                    parameter_dict["vlan1_range1_end"] = str( Branch_Base_Prefix + 26)
-                    parameter_dict["vlan1_range2_start"] = str( Branch_Base_Prefix + 100)
-                    parameter_dict["vlan1_range2_end"] = str( Branch_Base_Prefix + 200)
-                    parameter_dict["vlan1_network_mask"] = str( Branch_Base_Prefix + 0) + "/24"
-                    parameter_dict["vlan1_address"] = str( Branch_Base_Prefix + 1) + "/24"
-                    parameter_dict["vlan10_address"] = str( Branch_Base_Prefix + 257) + "/24"
-                    parameter_dict["vlan20_address"] = str( Branch_Base_Prefix + 513) + "/24"
-                    parameter_dict["vlan30_address"] = str( Branch_Base_Prefix + 769) + "/25"
-                    parameter_dict["vlan35_address"] = str( Branch_Base_Prefix + 897) + "/26"
-                    parameter_dict["vlan80_network"] = str( Branch_Base_Prefix + 960) + "/29"
-                    parameter_dict["vlan40_address"] = str( Branch_Base_Prefix + 969) + "/29"
-                    parameter_dict["vlan41_address"] = str( Branch_Base_Prefix + 977) + "/29"
-                    parameter_dict["vlan55_address"] = str( Branch_Base_Prefix + 985) + "/29"
-                    parameter_dict["FW_next_hop"] = str( Branch_Base_Prefix + 2)
-                    mpls_ip_mask = ipcalc.IP(parameter_dict['mpls_ip_mask'])
-                    parameter_dict["PE_mpls_ip"] = str( mpls_ip_mask - 1)
-                
-                if "static_route" in parameter_dict:
-                        static = parameter_dict["static_route"]
-                        static_list = static.split(", ")
-                        route_list = []
-                        first = True
-                        for route in static_list:
-                            route_split = route.split("@")
-                            name = route_split[0]
-                            prefix = route_split[1]
-                            dst = static = parameter_dict["static_gw"]
-                            if first:
-                                first = False
-                            else:
-                                name = "            " + name
-                            route_list.append("""{}:
-              description:
-              destination_prefix: {}
-              network_context_id:
-              nexthop_reachability_probe: false
-              nexthops:
-              - admin_distance: 1
-                nexthop_interface_id:
-                nexthop_ip: {}
-                self: false
-              scope: global
-              tags:""".format(name, prefix, dst))
-                        route = "\n".join(route_list)
-                        parameter_dict["static_route_data"] = route                    
+                    parameter_dict["site_long"] = latlon_request[1]   
                 self.createSITE(parameter_dict)
                 print("\nConfiguration is now complete. When ready you can hit the Deploy Site to send site " + parameter_dict['site_name'] + " to the controller \n")
                 self.thread_complete()
