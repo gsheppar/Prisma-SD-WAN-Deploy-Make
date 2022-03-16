@@ -358,9 +358,9 @@ class lineEditDemo(QWidget):
                     self.line_start = line_num
                     self.line_org = line_num
                 elif "latitude:" in line:
-                    self.line_latitude = line_num
+                    self.line_latitude = line_num - 1
                 elif "longitude:" in line:
-                    self.line_longitude = line_num
+                    self.line_longitude = line_num - 1
                             
             get = intial_file[self.line_start]
             head_tail = get.split(": ")
