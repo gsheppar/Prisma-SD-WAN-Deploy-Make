@@ -492,7 +492,6 @@ class lineEditDemo(QWidget):
             section.movePosition(QTextCursor.Down, QTextCursor.MoveAnchor, move_line)
             if check == 2:
                 self.lat = head_tail[1].strip()
-                self.csv.setdefault("site_lat", []).append(self.lat)
                 self.lat = get.strip()
                 section.movePosition(QTextCursor.StartOfBlock)
                 section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
@@ -510,7 +509,6 @@ class lineEditDemo(QWidget):
             section.movePosition(QTextCursor.Down, QTextCursor.MoveAnchor, 1)
             if check == 2:
                 self.long = head_tail[1].strip()
-                self.csv.setdefault("site_long", []).append(self.long)
                 self.long = get.strip()
                 section.movePosition(QTextCursor.StartOfBlock)
                 section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
