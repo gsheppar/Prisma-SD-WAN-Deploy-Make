@@ -227,7 +227,41 @@ class lineEditDemo(QWidget):
                 variable, ok = QInputDialog.getText(self, 'Variable Name', 'Please provide variable name (no spaces)')
                 variable.replace(" ", "")
                 if variable in self.csv.keys(): 
+                    msg = QMessageBox()
+                    msg.setWindowTitle("Site Variable")
+                    msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+                    msg.setText("This variable already exsists. Do you want to reference it again?")
+                    returnValue = msg.exec_()
+                    if returnValue == QMessageBox.Yes:
+                        self.text_console.append("Added variable {{ " + variable + " }} for " + select + "\n")
+                        cursor.removeSelectedText()
+                        variable = "{{ " + variable + " }}"
+                        fmt = QTextCharFormat()
+                        fmt.setBackground(Qt.green)
+                        cursor.setCharFormat(fmt)
+                        cursor.insertText(variable)
+                    else:
+                        fmt = QTextCharFormat()
+                        fmt.setForeground(Qt.red)
+                        self.text_console.setCurrentCharFormat(fmt)
                         self.text_console.append("Sorry that variable already exsists\n")
+                        fmt = QTextCharFormat()
+                        self.text_console.setCurrentCharFormat(fmt)
+                elif "-" in variable:
+                    fmt = QTextCharFormat()
+                    fmt.setForeground(Qt.red)
+                    self.text_console.setCurrentCharFormat(fmt)
+                    self.text_console.append("Sorry please don't use a dash - in your variables. Another option is underscores _\n")
+                    fmt = QTextCharFormat()
+                    self.text_console.setCurrentCharFormat(fmt)
+                elif not variable:
+                    print(variable)
+                    fmt = QTextCharFormat()
+                    fmt.setForeground(Qt.red)
+                    self.text_console.setCurrentCharFormat(fmt)
+                    self.text_console.append("Sorry please enter some text for the variable\n")
+                    fmt = QTextCharFormat()
+                    self.text_console.setCurrentCharFormat(fmt)
                 else:
                     self.csv.setdefault(variable, []).append(select)
                     self.text_console.append("Added variable {{ " + variable + " }} for " + select + " and put it in CSV\n")
@@ -237,6 +271,29 @@ class lineEditDemo(QWidget):
                     fmt.setBackground(Qt.green)
                     cursor.setCharFormat(fmt)
                     cursor.insertText(variable)
+                    
+                    msg = QMessageBox()
+                    msg.setWindowTitle("Site Variable")
+                    msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+                    msg.setText("Do you want to find all instance of the text you selected and insert the variable?")
+                    returnValue = msg.exec_()
+                    if returnValue == QMessageBox.Yes:
+                        self.text_output.moveCursor(QTextCursor.Start)
+                        self.text_output.verticalScrollBar().setValue(0)      
+                        find_text = select
+                        check = self.text_output.find(find_text)
+                        while check == True:
+                            section = self.text_output.textCursor()
+                            text = section.selectedText()
+                            fmt.setBackground(Qt.green)
+                            section.setCharFormat(fmt)
+                            section.insertText(variable)
+                            check = self.text_output.find(find_text)
+                            section = self.text_output.textCursor()
+                            fmt.setBackground(Qt.white)
+                            section.setCharFormat(fmt)
+                        self.text_output.moveCursor(QTextCursor.Start)
+                        self.text_output.verticalScrollBar().setValue(0)
 
 ######################### Undo Jinja Variable ##############################
         
