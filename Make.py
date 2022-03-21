@@ -483,42 +483,6 @@ class lineEditDemo(QWidget):
                 section.insertText("{{" + " street }}")
                 fmt.setBackground(Qt.white)
                 section.setCharFormat(fmt)
-            
-            get = intial_file[self.line_latitude]
-            head_tail = get.split(": ")
-            check = len(head_tail)
-            move_line = self.line_latitude - self.line_start
-            move_line = move_line - 1
-            section.movePosition(QTextCursor.Down, QTextCursor.MoveAnchor, move_line)
-            if check == 2:
-                self.lat = head_tail[1].strip()
-                self.lat = get.strip()
-                section.movePosition(QTextCursor.StartOfBlock)
-                section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
-                text = section.selectedText()
-                section.insertText("      latitude: ")
-                fmt.setBackground(Qt.green)
-                section.setCharFormat(fmt)
-                section.insertText("{{" + "site_lat }}")
-                fmt.setBackground(Qt.white)
-                section.setCharFormat(fmt)
-            
-            get = intial_file[self.line_longitude]
-            head_tail = get.split(": ")
-            check = len(head_tail)
-            section.movePosition(QTextCursor.Down, QTextCursor.MoveAnchor, 1)
-            if check == 2:
-                self.long = head_tail[1].strip()
-                self.long = get.strip()
-                section.movePosition(QTextCursor.StartOfBlock)
-                section.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
-                text = section.selectedText()
-                section.insertText("      longitude: ")
-                fmt.setBackground(Qt.green)
-                section.setCharFormat(fmt)
-                section.insertText("{{" + "site_long }}")
-                fmt.setBackground(Qt.white)
-                section.setCharFormat(fmt)
 
         
         def progress_fn(self, n):
@@ -535,8 +499,19 @@ class lineEditDemo(QWidget):
             self.jinja_file = filename
             self.text_console.append("YAML base pulled from " + self.pull_site_name + "\n")
             self.text_console.append("# Note: For ION 9000 interface configuration, if the source_interface or parent_interface is a bypasspair port, add the attribute 'parent_type': bypasspair_<name> where name is the interface name. \n# If this field is not specified, the cloudgenix_config utility will assume the parent interface is of type 'port'.\n")
-            file_temp = open(filename, "r")
-            text = file_temp.read()
+            file_temp = open(filename, "r")            
+            
+            replaced_content = ""
+            for line in file_temp:
+                if "latitude" in line:
+                    new_line = "      latitude: {{"" site_lat}}\n"
+                elif "longitude" in line:
+                    new_line = "      longitude: {{"" site_long}}\n"
+                else:
+                    new_line = line
+                replaced_content = replaced_content + new_line
+            
+            text = replaced_content
             self.text_output.insertPlainText(text)
             self.text_output.setReadOnly(True)
             self.text_output.moveCursor(QTextCursor.Start)
