@@ -87,7 +87,7 @@ def get():
     ############################################################################
     # Instantiate API
     ############################################################################
-    cgx_session = cloudgenix.API(controller=args["controller"], ssl_verify=args["verify"])
+    cgx_session = cloudgenix.API(controller=args["controller"], ssl_verify=args["verify"], update_check=False)
 
     # set debug
     cgx_session.set_debug(args["debug"])
@@ -169,7 +169,7 @@ def tenant():
     ############################################################################
     # Instantiate API
     ############################################################################
-    cgx_session = cloudgenix.API(controller=args["controller"], ssl_verify=args["verify"])
+    cgx_session = cloudgenix.API(controller=args["controller"], ssl_verify=args["verify"], update_check=False)
 
     # set debug
     cgx_session.set_debug(args["debug"])

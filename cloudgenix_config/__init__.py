@@ -2,7 +2,7 @@
 """
 Configuration IMPORT/EXPORT common functions
 
-**Version:** 1.6.0b1
+**Version:** 1.7.0b3
 
 **Author:** CloudGenix
 
@@ -49,7 +49,7 @@ else:
 
 
 # Version for reference
-__version__ = "1.6.0b1"
+__version__ = "1.7.0b3"
 version = __version__
 
 __author__ = "CloudGenix Developer Support <developers@cloudgenix.com>"
@@ -736,3 +736,4 @@ def compare_sdk_yaml_versions(config_ver, sdk_ver, query, sdk_or_yaml='sdk'):
                     "Please update config to latest SDK version".format(query, config_ver, sdk_ver))
 
     return sdk_ver if sdk_or_yaml == 'sdk' else config_ver
+    

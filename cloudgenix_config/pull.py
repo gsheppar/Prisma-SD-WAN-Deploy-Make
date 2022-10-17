@@ -2,7 +2,7 @@
 """
 Configuration EXPORT worker/script
 
-**Version:** 1.6.0b1
+**Version:** 1.7.0b3
 
 **Author:** CloudGenix
 
@@ -85,7 +85,6 @@ except ImportError:
     CLOUDGENIX_USER = None
     CLOUDGENIX_PASSWORD = None
 
-
 # python 2 and 3 handling
 if sys.version_info < (3,):
     text_type = unicode
@@ -165,6 +164,7 @@ MULTICASTRPS_STR = "multicastrps"
 CELLULAR_MODULES_SIM_SECURITY_STR = "cellular_modules_sim_security"
 ELEMENT_CELLULAR_MODULES_STR = "element_cellular_modules"
 ELEMENT_CELLULAR_MODULES_FIRMWARE_STR = "element_cellular_modules_firmware"
+# MULTICASTPEERGROUPS_STR = "multicastpeergroups"
 
 # Global Config Cache holders
 sites_cache = []
@@ -199,6 +199,7 @@ ipfixtemplate_cache = []
 ipfixlocalprefix_cache = []
 ipfixglobalprefix_cache = []
 apnprofiles_cache = []
+multicastpeergroups_cache = []
 
 id_name_cache = {}
 sites_n2id = {}
@@ -208,10 +209,10 @@ dup_name_dict_sites = {}
 # Handle cloudblade calls
 FROM_CLOUDBLADE = 0
 # Fix for CGCBL-565
-SDK_VERSION_REQUIRED = '5.6.1b2'
-CONFIG_VERSION_REQUIRED = '1.6.0b1'
+SDK_VERSION_REQUIRED = '5.6.1b2'  # Version when these fields were introduced in yml as meta attr
+CONFIG_VERSION_REQUIRED = '1.6.0b2'
 # Define constructor globally for now.
-sdk = cloudgenix.API()
+sdk = None
 jd = cloudgenix.jd
 
 # Set logging to use function name
@@ -307,6 +308,7 @@ def update_global_cache():
     global ipfixlocalprefix_cache
     global ipfixglobalprefix_cache
     global apnprofiles_cache
+    global multicastpeergroups_cache
 
     global id_name_cache
     global wannetworks_id2type
@@ -440,6 +442,10 @@ def update_global_cache():
     apnprofiles_resp = sdk.get.apnprofiles()
     apnprofiles_cache, _ = extract_items(apnprofiles_resp, 'apnprofiles')
 
+    # multicastpeergroups
+    multicastpeergroups_resp = sdk.get.multicastpeergroups()
+    multicastpeergroups_cache, _ = extract_items(multicastpeergroups_resp, 'multicastpeergroups')
+
     # sites name
     id_name_cache.update(build_lookup_dict(sites_cache, key_val='id', value_val='name'))
 
@@ -534,6 +540,9 @@ def update_global_cache():
 
     # apnprofiles name
     id_name_cache.update(build_lookup_dict(apnprofiles_cache, key_val='id', value_val='name'))
+
+    # multicastpeergroups name
+    id_name_cache.update(build_lookup_dict(multicastpeergroups_cache, key_val='id', value_val='name'))
 
     # WAN Networks ID to Type cache - will be used to disambiguate "Public" vs "Private" WAN Networks that have
     # the same name at the SWI level.
@@ -671,7 +680,7 @@ def delete_if_empty(variable_dict, key):
     """
     if key in variable_dict:
         val = variable_dict[key]
-        if not val and not isinstance(val, bool) and val is not 0:
+        if not val and not isinstance(val, bool) and val != 0:
             variable_dict.pop(key)
     return
 
@@ -686,6 +695,9 @@ def _pull_config_for_single_site(site_name_id):
     """
     global id_name_cache
     global dup_name_dict_sites
+    #### Add Below ####
+    dup_name_dict_sites = {}
+    ####################
 
     # Opportunistic replace Name w/ID.
     site_id = sites_n2id.get(site_name_id, site_name_id)
@@ -705,6 +717,8 @@ def _pull_config_for_single_site(site_name_id):
     # if this site name is a duplicate with another site.
     error_site_name = site['name']
 
+    if "multicast_peer_group_id" in site:
+        site["multicast_peer_group_id"] = id_name_cache.get(site["multicast_peer_group_id"])
     # Get WAN interfaces
     dup_name_dict = {}
     site[WANINTERFACES_STR] = {}
@@ -982,7 +996,7 @@ def _pull_config_for_single_site(site_name_id):
 
         # create a parent list
         parent_id_list = []
-        # bp_parent_id_list = []
+        bp_parent_id_list = []
         if_name_dict = {}
         for interface in interfaces:
             if interface.get('name') in if_name_dict:
@@ -1012,12 +1026,12 @@ def _pull_config_for_single_site(site_name_id):
                     # add to parent list
                     # print("Adding WAN {0} to parent_id_list".format(wan_id))
                     parent_id_list.append(wan_id)
-                    # bp_parent_id_list.append(wan_id)
+                    bp_parent_id_list.append(wan_id)
                 if lan_id is not None and if_id2type.get(lan_id) in ['port']:
                     # add to parent list
                     # print("Adding LAN {0} to parent_id_list".format(lan_id))
                     parent_id_list.append(lan_id)
-                    # bp_parent_id_list.append(lan_id)
+                    bp_parent_id_list.append(lan_id)
 
         for interface in interfaces:
             interface_id = interface.get('id')
@@ -1030,10 +1044,12 @@ def _pull_config_for_single_site(site_name_id):
                     if if_name_dict[interface.get('name')] > 1:
                         if if_type != 'bypasspair':
                             continue
-                    # elif interface_id in bp_parent_id_list:
-                    #     continue
+                    elif interface_id in bp_parent_id_list:
+                        continue
                     elif if_type not in ('virtual_interface', 'bypasspair', 'port'):
                         continue
+                elif interface_id in bp_parent_id_list:
+                    continue
                 elif if_type not in ('virtual_interface', 'bypasspair', 'port'):
                     continue
             elif FORCE_PARENTS:
@@ -1836,7 +1852,6 @@ def pull_config_sites(sites, output_filename, output_multi=None, passed_sdk=None
                 config_yml.write("# Created at {0}\n".format(datetime.datetime.utcnow().isoformat()+"Z"))
                 if sdk.email:
                     config_yml.write("# by {0}\n".format(sdk.email))
-            #config_yml.write("# Note: For ION 9000 interface configuration, if the source_interface or parent_interface is a bypasspair port, add the attribute 'parent_type': bypasspair_<name> where name is the interface name. \n# If this field is not specified, the cloudgenix_config utility will assume the parent interface is of type 'port'.\n")
             # Adding FROM_CLOUDBLADE line into pull site yml file
             if FROM_CLOUDBLADE:
                 config_yml.write("# FROM_CLOUDBLADE\n")
@@ -1893,9 +1908,9 @@ def pull_config_sites(sites, output_filename, output_multi=None, passed_sdk=None
                     config_yml.write("# Created at {0}\n".format(datetime.datetime.utcnow().isoformat()+"Z"))
                     if sdk.email:
                         config_yml.write("# by {0}\n".format(sdk.email))
-                config_yml.write("# Note: For ION 9Ks interface configuration, if the source_interface or parent_interface is a bypasspair port, add the attribute 'parent_type': bypasspair_IF1_IF2 and so on. \n# If this field is not specified, the cloudgenix_config utility will assume the parent interface is of type 'port'.\n")
                 yaml.safe_dump(CONFIG, config_yml, default_flow_style=False)
                 config_yml.close()
+                print("saved")
 
                 # jd(CONFIG)
                 # jd(id_name_cache)
@@ -1938,7 +1953,6 @@ def pull_config_sites(sites, output_filename, output_multi=None, passed_sdk=None
                     config_yml.write("# Created at {0}\n".format(datetime.datetime.utcnow().isoformat()+"Z"))
                     if sdk.email:
                         config_yml.write("# by {0}\n".format(sdk.email))
-                config_yml.write("# Note: For ION 9Ks interface configuration, if the source_interface or parent_interface is a bypasspair port, add the attribute 'parent_type': bypasspair_IF1_IF2 and so on. \n# If this field is not specified, the cloudgenix_config utility will assume the parent interface is of type 'port'.\n")
                 yaml.safe_dump(CONFIG, config_yml, default_flow_style=False)
                 config_yml.close()
 
@@ -1965,10 +1979,6 @@ def pull(name):
     parser = argparse.ArgumentParser()
     # Allow Controller modification and debug level sets.
     config_group = parser.add_argument_group('Config', 'These options change how the configuration is generated.')
-    config_group.add_argument('--sites', '-S',
-                              help='Site name or id. More than one can be specified '
-                                   'separated by comma, or special string "ALL_SITES".',
-                              required=False)
     config_group.add_argument('--leave-implicit-ids',
                               help='Preserve implicit IDs in objects ("id" values only, '
                                    'references to other objects will still be names.)',
@@ -2032,13 +2042,13 @@ def pull(name):
 
     # Build SDK Constructor
     if args['controller'] and args['insecure']:
-        sdk = cloudgenix.API(controller=args['controller'], ssl_verify=False)
+        sdk = cloudgenix.API(controller=args['controller'], ssl_verify=False, update_check=False)
     elif args['controller']:
-        sdk = cloudgenix.API(controller=args['controller'])
+        sdk = cloudgenix.API(controller=args['controller'], update_check=False)
     elif args['insecure']:
-        sdk = cloudgenix.API(ssl_verify=False)
+        sdk = cloudgenix.API(ssl_verify=False, update_check=False)
     else:
-        sdk = cloudgenix.API()
+        sdk = cloudgenix.API(update_check=False)
 
     # check for region ignore
     if args['ignore_region']:
@@ -2063,7 +2073,6 @@ def pull(name):
         user_password = CLOUDGENIX_PASSWORD
     else:
         user_password = None
-
     # check for token
     if CLOUDGENIX_AUTH_TOKEN and not args["email"] and not args["password"]:
         sdk.interactive.use_token(CLOUDGENIX_AUTH_TOKEN)
