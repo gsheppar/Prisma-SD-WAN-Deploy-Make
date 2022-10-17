@@ -523,15 +523,19 @@ class lineEditDemo(QWidget):
                     msg.setText("Confirm you want to push site: " + self.sitefile.currentText())
                     returnValue = msg.exec_()
                     if returnValue == QMessageBox.Yes:
-                        self.site_main_verify, ext = self.sitefile.currentText().split(".")
-                        destroy_site = None
-                        filename_temp = os.path.join("./Configs/", self.sitefile.currentText())
-                        filename = str(filename_temp)                    
-                        workerdo = WorkerDo(filename, destroy_site)
-                        workerdo.signals.result.connect(self.print_output)
-                        workerdo.signals.finished.connect(self.thread_complete)
-                        self.threadpool.start(workerdo)
-                        self.site_push_check = True
+                        try:
+                            self.site_main_verify, ext = self.sitefile.currentText().split(".")
+                            destroy_site = None
+                            filename_temp = os.path.join("./Configs/", self.sitefile.currentText())
+                            filename = str(filename_temp)
+                            workerdo = WorkerDo(filename, destroy_site)
+                            workerdo.signals.result.connect(self.print_output)
+                            workerdo.signals.finished.connect(self.thread_complete)
+                            self.threadpool.start(workerdo)
+                            self.site_push_check = True
+                        except:                        
+                            self.text_output.append("Failed to import your site file name. Please use only characters not numbers for site names.")
+                            
                     else:
                         self.text_output.append("Cancelled")
                         self.thread_complete()

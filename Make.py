@@ -354,7 +354,7 @@ class lineEditDemo(QWidget):
             line_num = 0
             for line in intial_file:
                 line_num += 1
-                if "sites v4.6:" in line:
+                if "sites v4.7:" in line:
                     self.line_start = line_num
                     self.line_org = line_num
                 elif "latitude:" in line:
