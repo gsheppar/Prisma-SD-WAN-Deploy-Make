@@ -56,6 +56,7 @@ MIT
 | **1.0.0** | **b1** | Initial Release. |
 | **2.0.0** | **b1** | Updated to support 1.6 Config SDK  |
 | **3.0.0** | **b1** | Updated to support 1.7 Config SDK  |
+| **4.0.0** | **b1** | Updated to support 1.9 Config SDK  |
 
 
 #### For more info
