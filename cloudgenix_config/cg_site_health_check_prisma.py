@@ -578,14 +578,13 @@ def verify(name):
             print("\n##################################################################\n")
             print("DNS TRT STATS")
             print("Stats for past 24 hours")
-            
-
-            np_array = np.array(dns_trt_array)
-            print("Min             : " + dns_trt_classifier( round(np.amin(np_array),2)))
-            print("average         : " + dns_trt_classifier( round(np.average(np_array),2)))
-            print("80th percentile : " + dns_trt_classifier( round(np.percentile(np_array,80),2)))
-            print("95th percentile : " + dns_trt_classifier( round(np.percentile(np_array,95),2)))
-            print("Max Value       : " + dns_trt_classifier( round(np.amax(np_array),2) ))
+            if dns_trt_array:
+                np_array = np.array(dns_trt_array)
+                print("Min             : " + dns_trt_classifier( round(np.amin(np_array),2)))
+                print("average         : " + dns_trt_classifier( round(np.average(np_array),2)))
+                print("80th percentile : " + dns_trt_classifier( round(np.percentile(np_array,80),2)))
+                print("95th percentile : " + dns_trt_classifier( round(np.percentile(np_array,95),2)))
+                print("Max Value       : " + dns_trt_classifier( round(np.amax(np_array),2) ))
 
             ### Get stats from 48 hours ago
             dns_request = '{"start_time":"' + dt_yesterday + 'Z","end_time":"'+ dt_start + 'Z","interval":"5min","metrics":[{"name":"AppUDPTransactionResponseTime","statistics":["average"],"unit":"milliseconds"}],"view":{},"filter":{"site":["' + site_id + '"],"app":["' + dns_app_id + '"],"path_type":["DirectInternet","VPN","PrivateVPN","PrivateWAN","ServiceLink"]}}'
@@ -599,13 +598,14 @@ def verify(name):
                     dns_trt_array.append(datapoint['value'])
 
             print("Stats from Yesterday")
-        
-            np_array_yesterday = np.array(dns_trt_array)
-            print("Min             : " + dns_trt_classifier( round(np.amin(np_array_yesterday),2)))
-            print("average         : " + dns_trt_classifier( round(np.average(np_array_yesterday),2)))
-            print("80th percentile : " + dns_trt_classifier( round(np.percentile(np_array_yesterday,80),2)))
-            print("95th percentile : " + dns_trt_classifier( round(np.percentile(np_array_yesterday,95),2)))
-            print("Max Value       : " + dns_trt_classifier( round(np.amax(np_array_yesterday),2)))
+            
+            if dns_trt_array:
+                np_array_yesterday = np.array(dns_trt_array)
+                print("Min             : " + dns_trt_classifier( round(np.amin(np_array_yesterday),2)))
+                print("average         : " + dns_trt_classifier( round(np.average(np_array_yesterday),2)))
+                print("80th percentile : " + dns_trt_classifier( round(np.percentile(np_array_yesterday,80),2)))
+                print("95th percentile : " + dns_trt_classifier( round(np.percentile(np_array_yesterday,95),2)))
+                print("Max Value       : " + dns_trt_classifier( round(np.amax(np_array_yesterday),2)))
     else:
         print(pFail("ERROR: DNS APPLICATION NOT FOUND"))
     #vprint(END_SECTION)

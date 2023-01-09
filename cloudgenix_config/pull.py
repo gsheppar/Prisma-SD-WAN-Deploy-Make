@@ -2,7 +2,7 @@
 """
 Configuration EXPORT worker/script
 
-**Version:** 1.7.0b3
+**Version:** 1.9.0b1
 
 **Author:** CloudGenix
 
@@ -85,6 +85,7 @@ except ImportError:
     CLOUDGENIX_USER = None
     CLOUDGENIX_PASSWORD = None
 
+
 # python 2 and 3 handling
 if sys.version_info < (3,):
     text_type = unicode
@@ -164,6 +165,8 @@ MULTICASTRPS_STR = "multicastrps"
 CELLULAR_MODULES_SIM_SECURITY_STR = "cellular_modules_sim_security"
 ELEMENT_CELLULAR_MODULES_STR = "element_cellular_modules"
 ELEMENT_CELLULAR_MODULES_FIRMWARE_STR = "element_cellular_modules_firmware"
+RADII_STR = "radii"
+MULTICASTSOURCESITECONFIGS_STR = "multicastsourcesiteconfigs"
 # MULTICASTPEERGROUPS_STR = "multicastpeergroups"
 
 # Global Config Cache holders
@@ -200,6 +203,8 @@ ipfixlocalprefix_cache = []
 ipfixglobalprefix_cache = []
 apnprofiles_cache = []
 multicastpeergroups_cache = []
+radii_cache = []
+multicastsourcesiteconfigs_cache = []
 
 id_name_cache = {}
 sites_n2id = {}
@@ -309,6 +314,9 @@ def update_global_cache():
     global ipfixglobalprefix_cache
     global apnprofiles_cache
     global multicastpeergroups_cache
+    global radii_cache
+    global multicastsourcesiteconfigs_cache
+
 
     global id_name_cache
     global wannetworks_id2type
@@ -544,6 +552,9 @@ def update_global_cache():
     # multicastpeergroups name
     id_name_cache.update(build_lookup_dict(multicastpeergroups_cache, key_val='id', value_val='name'))
 
+    # radii name
+    id_name_cache.update(build_lookup_dict(radii_cache, key_val='id', value_val='name'))
+
     # WAN Networks ID to Type cache - will be used to disambiguate "Public" vs "Private" WAN Networks that have
     # the same name at the SWI level.
     wannetworks_id2type = build_lookup_dict(wannetworks_cache, key_val='id', value_val='type')
@@ -606,6 +617,8 @@ def build_version_strings():
     global CELLULAR_MODULES_SIM_SECURITY_STR
     global ELEMENT_CELLULAR_MODULES_STR
     global ELEMENT_CELLULAR_MODULES_FIRMWARE_STR
+    global RADII_STR
+    global MULTICASTSOURCESITECONFIGS_STR
 
     if not STRIP_VERSIONS:
         # Config container strings
@@ -633,7 +646,7 @@ def build_version_strings():
         PREFIXLISTS_CONFIG_STR = add_version_to_object(sdk.get.routing_prefixlists, "prefix_lists")
         IPCOMMUNITYLISTS_CONFIG_STR = add_version_to_object(sdk.get.routing_ipcommunitylists,
                                                             "ip_community_lists")
-        HUBCLUSTER_CONFIG_STR = add_version_to_object(sdk.get.routing_prefixlists, "hubclusters")
+        HUBCLUSTER_CONFIG_STR = add_version_to_object(sdk.get.hubclusters, "hubclusters")
         SPOKECLUSTER_CONFIG_STR = add_version_to_object(sdk.get.spokeclusters, "spokeclusters")
         NATLOCALPREFIX_STR = add_version_to_object(sdk.get.site_natlocalprefixes, "site_nat_localprefixes")
         DNS_SERVICES_STR = add_version_to_object(sdk.get.dnsservices, "dnsservices")
@@ -645,6 +658,8 @@ def build_version_strings():
         CELLULAR_MODULES_SIM_SECURITY_STR = add_version_to_object(sdk.get.cellular_modules_sim_security, "cellular_modules_sim_security")
         ELEMENT_CELLULAR_MODULES_STR = add_version_to_object(sdk.get.element_cellular_modules, "element_cellular_modules")
         ELEMENT_FIRMWARE_CELLULAR_MODULES_STR = add_version_to_object(sdk.get.element_cellular_modules_firmware, "element_cellular_modules_firmware")
+        RADII_STR = add_version_to_object(sdk.get.radii, "radii")
+        MULTICASTSOURCESITECONFIGS_STR = add_version_to_object(sdk.get.radii, "multicastsourcesiteconfigs")
 
 def strip_meta_attributes(obj, leave_name=False, report_id=None):
     """
@@ -695,9 +710,6 @@ def _pull_config_for_single_site(site_name_id):
     """
     global id_name_cache
     global dup_name_dict_sites
-    #### Add Below ####
-    dup_name_dict_sites = {}
-    ####################
 
     # Opportunistic replace Name w/ID.
     site_id = sites_n2id.get(site_name_id, site_name_id)
@@ -798,13 +810,29 @@ def _pull_config_for_single_site(site_name_id):
         hubcluster_template = copy.deepcopy(hubcluster)
         name_lookup_in_template(hubcluster_template, 'network_context_id', id_name_cache)
         name_lookup_in_template(hubcluster_template, 'security_policy_set', id_name_cache)
-        strip_meta_attributes(hubcluster_template)
+        strip_meta_attributes(hubcluster_template, report_id=True)
         # check name for duplicates
         checked_hubcluster_name = check_name(hubcluster['name'], dup_name_dict, 'Hubcluster',
                                              error_site_txt="{0}({1})".format(error_site_name,
                                                                               site_id))
         # update id name cache in case name changed.
         id_name_cache[hubcluster['id']] = checked_hubcluster_name
+
+        if hubcluster_template.get("peer_sites"):
+            peer_sites = []
+            for peer_site in hubcluster_template["peer_sites"]:
+                peer_site = id_name_cache.get(peer_site, peer_site)
+                peer_sites.append(peer_site)
+            hubcluster_template["peer_sites"] = peer_sites
+
+        if hubcluster_template.get('elements'):
+            elements = []
+            for element in hubcluster_template['elements']:
+                hub_element_id = element.get('hub_element_id')
+                element['hub_element_id'] = id_name_cache.get(hub_element_id, hub_element_id)
+                elements.append(element)
+            hubcluster_template['elements'] = elements
+
         site[HUBCLUSTER_CONFIG_STR][checked_hubcluster_name] = hubcluster_template
     delete_if_empty(site, HUBCLUSTER_CONFIG_STR)
 
@@ -940,12 +968,28 @@ def _pull_config_for_single_site(site_name_id):
 
     delete_if_empty(site, SITE_IPFIXLOCALPREFIXES_STR)
 
+    # Get Multicast Source Site Config
+    site[MULTICASTSOURCESITECONFIGS_STR] = []
+    response = sdk.get.multicastsourcesiteconfigs(site['id'])
+    if not response.cgx_status:
+        throw_error("MultiCast Source Site Config Fetch Failed: ", response)
+    multicastsourcesiteconfigs_items = response.cgx_content['items']
+    for multicastsourcesiteconfigs in multicastsourcesiteconfigs_items:
+        multicastsourcesiteconfigs_template = copy.deepcopy(multicastsourcesiteconfigs)
+        strip_meta_attributes(multicastsourcesiteconfigs_template)
+        site[MULTICASTSOURCESITECONFIGS_STR].append(multicastsourcesiteconfigs_template)
+
+    delete_if_empty(site, MULTICASTSOURCESITECONFIGS_STR)
+
     # Get Elements
     site[ELEMENTS_STR] = {}
     dup_name_dict_elements = {}
     for element in ELEMENTS:
         if element['site_id'] != site['id']:
             continue
+
+        if element.get('cluster_id'):
+            element['cluster_id'] = id_name_cache.get(element['cluster_id'])
 
         # Get cellular_modules
         element[ELEMENT_CELLULAR_MODULES_STR] = {}
@@ -1407,6 +1451,23 @@ def _pull_config_for_single_site(site_name_id):
             element[MULTICASTRPS_STR].append(multicastrp_template)
         delete_if_empty(element, MULTICASTRPS_STR)
 
+        # Get radii
+        element[RADII_STR] = {}
+        response = sdk.get.radii(element['id'])
+        if not response.cgx_status:
+            throw_error("Radii AAA get failed: ", response)
+        radii_items = response.cgx_content['items']
+        for radii in radii_items:
+            radii_template = copy.deepcopy(radii)
+            if radii_template.get("source_interface_id"):
+                source_interface_id = radii_template.get("source_interface_id")
+                radii_template["source_interface_id"] = id_name_cache.get(source_interface_id, source_interface_id)
+            strip_meta_attributes(radii_template)
+            element[RADII_STR][radii.get("name")] = (radii_template)
+
+        delete_if_empty(element, RADII_STR)
+
+
         # Get syslog
         element[SYSLOG_STR] = []
         response = sdk.get.syslogservers(site['id'], element['id'])
@@ -1755,7 +1816,7 @@ def _pull_config_for_single_site(site_name_id):
 
 def pull_config_sites(sites, output_filename, output_multi=None, passed_sdk=None, passed_report_id=None,
                       passed_strip_versions=None, passed_force_parents=None, no_header=None, return_result=False,
-                      normalize=False):
+                      normalize=False, reset_duplicate=True):
     """
     Main configuration pull function
     :param sites: Comma seperated list of site names or IDs, or "ALL_SITES" text.
@@ -1778,6 +1839,10 @@ def pull_config_sites(sites, output_filename, output_multi=None, passed_sdk=None
     global STRIP_VERSIONS
     global FORCE_PARENTS
     global sdk
+
+    if reset_duplicate:
+        global dup_name_dict_sites
+        dup_name_dict_sites = {}
 
     # check passed vars
     if passed_sdk is not None:
@@ -1852,6 +1917,7 @@ def pull_config_sites(sites, output_filename, output_multi=None, passed_sdk=None
                 config_yml.write("# Created at {0}\n".format(datetime.datetime.utcnow().isoformat()+"Z"))
                 if sdk.email:
                     config_yml.write("# by {0}\n".format(sdk.email))
+            config_yml.write("# Note: For interface configuration, if the source_interface or parent_interface is a bypasspair port, add the attribute 'parent_type': bypasspair_<name> where name is the interface name. \n# If this field is not specified, the cloudgenix_config utility will assume the parent interface is of type 'port'.\n")
             # Adding FROM_CLOUDBLADE line into pull site yml file
             if FROM_CLOUDBLADE:
                 config_yml.write("# FROM_CLOUDBLADE\n")
@@ -1864,7 +1930,7 @@ def pull_config_sites(sites, output_filename, output_multi=None, passed_sdk=None
         # output_multi is set. Prepare.
 
         # make sure directory works.
-        final_dir = os.path.join(output_multi, '') + "/Backup"
+        final_dir = os.path.join(output_multi, '')
         try:
             os.mkdir(final_dir)
         except OSError as exc:
@@ -1908,9 +1974,9 @@ def pull_config_sites(sites, output_filename, output_multi=None, passed_sdk=None
                     config_yml.write("# Created at {0}\n".format(datetime.datetime.utcnow().isoformat()+"Z"))
                     if sdk.email:
                         config_yml.write("# by {0}\n".format(sdk.email))
+                config_yml.write("# Note: For interface configuration, if the source_interface or parent_interface is a bypasspair port, add the attribute 'parent_type': bypasspair_IF1_IF2 and so on. \n# If this field is not specified, the cloudgenix_config utility will assume the parent interface is of type 'port'.\n")
                 yaml.safe_dump(CONFIG, config_yml, default_flow_style=False)
                 config_yml.close()
-                print("saved")
 
                 # jd(CONFIG)
                 # jd(id_name_cache)
@@ -1953,6 +2019,7 @@ def pull_config_sites(sites, output_filename, output_multi=None, passed_sdk=None
                     config_yml.write("# Created at {0}\n".format(datetime.datetime.utcnow().isoformat()+"Z"))
                     if sdk.email:
                         config_yml.write("# by {0}\n".format(sdk.email))
+                config_yml.write("# Note: For interface configuration, if the source_interface or parent_interface is a bypasspair port, add the attribute 'parent_type': bypasspair_IF1_IF2 and so on. \n# If this field is not specified, the cloudgenix_config utility will assume the parent interface is of type 'port'.\n")
                 yaml.safe_dump(CONFIG, config_yml, default_flow_style=False)
                 config_yml.close()
 
@@ -1979,6 +2046,10 @@ def pull(name):
     parser = argparse.ArgumentParser()
     # Allow Controller modification and debug level sets.
     config_group = parser.add_argument_group('Config', 'These options change how the configuration is generated.')
+    config_group.add_argument('--sites', '-S',
+                              help='Site name or id. More than one can be specified '
+                                   'separated by comma, or special string "ALL_SITES".',
+                              required=False)
     config_group.add_argument('--leave-implicit-ids',
                               help='Preserve implicit IDs in objects ("id" values only, '
                                    'references to other objects will still be names.)',
@@ -2042,13 +2113,13 @@ def pull(name):
 
     # Build SDK Constructor
     if args['controller'] and args['insecure']:
-        sdk = cloudgenix.API(controller=args['controller'], ssl_verify=False, update_check=False)
+        sdk = cloudgenix.API(controller=args['controller'], ssl_verify=False)
     elif args['controller']:
-        sdk = cloudgenix.API(controller=args['controller'], update_check=False)
+        sdk = cloudgenix.API(controller=args['controller'])
     elif args['insecure']:
-        sdk = cloudgenix.API(ssl_verify=False, update_check=False)
+        sdk = cloudgenix.API(ssl_verify=False)
     else:
-        sdk = cloudgenix.API(update_check=False)
+        sdk = cloudgenix.API()
 
     # check for region ignore
     if args['ignore_region']:
@@ -2073,6 +2144,7 @@ def pull(name):
         user_password = CLOUDGENIX_PASSWORD
     else:
         user_password = None
+
     # check for token
     if CLOUDGENIX_AUTH_TOKEN and not args["email"] and not args["password"]:
         sdk.interactive.use_token(CLOUDGENIX_AUTH_TOKEN)
