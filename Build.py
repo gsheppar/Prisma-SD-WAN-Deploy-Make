@@ -526,7 +526,8 @@ class lineEditDemo(QWidget):
                         try:
                             self.site_main_verify, ext = self.sitefile.currentText().split(".")
                             destroy_site = None
-                            filename_temp = os.path.join("./Configs/", self.sitefile.currentText())
+                            current_directory = os.getcwd()
+                            filename_temp = os.path.join(current_directory +"/Configs/", self.sitefile.currentText())
                             filename = str(filename_temp)
                             workerdo = WorkerDo(filename, destroy_site)
                             workerdo.signals.result.connect(self.print_output)
