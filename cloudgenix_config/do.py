@@ -11429,7 +11429,7 @@ def do_site(loaded_config, destroy, declaim=False, passed_sdk=None, passed_timeo
                             del_site_resp.cgx_content)
 
     output_message("DONE")
-    return 1
+    return
 
 
 def dosite(filename, destroy_site):
@@ -11519,7 +11519,6 @@ def dosite(filename, destroy_site):
                              version=dump_version())
 
     args = vars(parser.parse_args())
-
     #destroy = args['destroy']
     if destroy_site == "destroy":
         destroy = True
@@ -11528,16 +11527,19 @@ def dosite(filename, destroy_site):
     declaim = args['declaim']
     #config_file = args['Config File'][0]
     config_file = filename
-    
+
     apiversion = str(args['apiversion']).lower()
     if not apiversion in ('sdk', 'yaml', 'yml'):
         throw_error("Incorrect apiversion value. Allowed values are 'SDK, YAML, YML'")
     
+    print(config_file)
     # load config file
-    with open(config_file, 'r') as datafile:
-        loaded_config = yaml.safe_load(datafile)
-    
-
+    try:
+        with open(config_file, 'r') as datafile:
+            loaded_config = yaml.safe_load(datafile)
+    except Exception as e:
+        print("YAML file is formated wrong")
+        print(str(e))
     # set verbosity and SDK debug
     debuglevel = args["verbose"]
     sdk_debuglevel = args["sdkdebug"]
