@@ -1,6 +1,6 @@
 certifi==2021.10.8
 charset-normalizer==2.0.9
-cloudgenix==6.1.1b1
+cloudgenix==6.2.2b1
 cloudgenix-idname==2.0.2
 fuzzywuzzy==0.18.0
 idna==3.3
@@ -16,5 +16,5 @@ python-Levenshtein==0.12.2
 PyYAML==6.0
 requests==2.27.0
 six==1.16.0
-urllib3==1.26.7
+urllib3==1.26.16
 websockets==10.1
